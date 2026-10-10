@@ -23,18 +23,19 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - `docs/phase1-frontend-bom.md` — Phase 1 front-end BOM: exact carrier/IF plan, LNA and antenna options, phased test plan
 - `docs/downconverter-dsp-report.md` — downconverter buy-vs-build spec, DSP chain scope, staged bring-up
 - `docs/esp32-native-exploration.md` — ESP32-S3 native capture feasibility: no downconverter, no dongle, no FPGA
+- `docs/pluto-path.md` — Pluto SDR as lab reference receiver: direct 2.33 GHz tuning, whole-band capture, revised bring-up plan (added 2026-10-09)
 - `grok-prompt.md` — handoff prompt for briefing an AI assistant onto this project
 
 ## Status
 
 - [x] Signal parameters pinned (R&S XM-Radio manual)
-- [x] Downconverter spec: buy Nooelec Ham It Down 3 GHz (~$90); homebrew antenna/LNA/filter
+- [x] Pluto SDR clone on the bench — covers 2.33 GHz directly, whole 12.5 MHz XM band in one 20 MHz capture; downconverter now fallback-only (RTL-SDR path)
 - [x] DSP chain scoped (GNU Radio primitives; custom work = frame sync + demux)
-- [x] ESP32-native path explored: feasible with conditions
+- [x] ESP32-native path explored: feasible with conditions (Pluto captures become its reference)
 - [ ] Phase 0: RF verification — S3 + antenna + LNA, look for carriers at 2333 MHz (kill criterion for the native path)
 - [ ] Antenna + LNA build
 - [ ] Stage 0 modem prototype (synthesized waveform, $0)
 
 ## Hardware
 
-RTL-SDR dongles (R820T2, ~1.75 GHz / 2.4 Msps) · ESP32-S3 boards (LilyGO T-Display-S3, T-Embed CC1101, M5Stack Cardputer Advanced) · Windows bench (GNU Radio via Radioconda)
+Pluto SDR clone (AD9363-class: 325 MHz–3.8 GHz, ≤20 MHz BW, 12-bit, TX+RX) · RTL-SDR dongles (R820T2, ~1.75 GHz / 2.4 Msps, fallback path) · ESP32-S3 boards (LilyGO T-Display-S3, T-Embed CC1101, M5Stack Cardputer Advanced) · Windows bench (GNU Radio via Radioconda)
