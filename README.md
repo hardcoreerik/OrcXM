@@ -28,6 +28,7 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - `docs/phase0-setup-espsdr-method.md` — Phase 0 setup following the ESP-SDR team's documented method (flash, interrogate, tune, capture)
 - `docs/s3-tuning-investigation.md` — REA-directed static analysis of the S3 RF PLL tuning path (libphy.a): fractional-N/SDM mechanism, call chain, out-of-band assessment
 - `docs/sxm-player-analysis.md` — REA-directed analysis of a Linux SiriusXM player (sxm-player): IP API surface, tune flow, delivery pipeline; architecture only, encryption untouched
+- `docs/sxm-player-ecosystem.md` — comparative survey of five open-source players: HLS/AAC pipelines, SXM in-stream metadata format, TS stream structure (PID 768/1024); formats only, no decryption
 - `grok-prompt.md` — handoff prompt for briefing an AI assistant onto this project
 
 ## Status
