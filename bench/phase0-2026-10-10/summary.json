@@ -1,0 +1,278 @@
+{
+  "identity": [
+    {
+      "cmd": "INFO",
+      "reply": "S3SDR 6 burst 16380"
+    },
+    {
+      "cmd": "VERSION?",
+      "reply": "VERSION {\"revision\":\"e74f2a470972ec163c247f1fe88d32e08579242a\",\"build_date\":\"2026-10-08\",\"build_timestamp\":\"2026-10-08T12:20:54Z\",\"profile\":\"esp32s3\"}"
+    },
+    {
+      "cmd": "TRANSPORT?",
+      "reply": "TRANSPORT UART 2000000"
+    },
+    {
+      "cmd": "LIMITS?",
+      "reply": "LIMITS {\"gain\":[0,82,1],\"bandwidth\":[13,69,1,0],\"rates\":[80000000,40000000,16000000],\"bits\":[8,10]}"
+    },
+    {
+      "cmd": "RANGE?",
+      "reply": "RANGE 100 6000 1"
+    },
+    {
+      "cmd": "FREQ 2333.465",
+      "reply": "FREQ 2333.465 -> ERR command"
+    }
+  ],
+  "runs": [
+    {
+      "label": "wifi2437",
+      "tune_mhz": 2437,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "burst",
+      "captures": 24,
+      "seconds": 3.07,
+      "rms_median_dbfs": 23.59,
+      "rms_max_dbfs": 35.74,
+      "rms_burst_db": 12.15
+    },
+    {
+      "label": "wifi2412",
+      "tune_mhz": 2412,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "burst",
+      "captures": 16,
+      "seconds": 2.07,
+      "rms_median_dbfs": 28.82,
+      "rms_max_dbfs": 34.61,
+      "rms_burst_db": 5.79
+    },
+    {
+      "label": "ctrl2350",
+      "tune_mhz": 2350,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "noise",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 31.3,
+      "rms_max_dbfs": 36.41,
+      "rms_burst_db": 5.11
+    },
+    {
+      "label": "ctrl2327",
+      "tune_mhz": 2327,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "noise",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 26.87,
+      "rms_max_dbfs": 30.12,
+      "rms_burst_db": 3.25
+    },
+    {
+      "label": "terr2337",
+      "tune_mhz": 2337,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 25.66,
+      "rms_max_dbfs": 32.83,
+      "rms_burst_db": 7.17,
+      "nearest": "TerrA",
+      "offset_hz": 490000,
+      "snr_db": 0.37
+    },
+    {
+      "label": "terr2340",
+      "tune_mhz": 2340,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 15.29,
+      "rms_max_dbfs": 31.07,
+      "rms_burst_db": 15.78,
+      "nearest": "TerrB",
+      "offset_hz": 20000,
+      "snr_db": 0.34
+    },
+    {
+      "label": "sat2333",
+      "tune_mhz": 2333,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 27.45,
+      "rms_max_dbfs": 34.12,
+      "rms_burst_db": 6.66,
+      "nearest": "Sat1A",
+      "offset_hz": 465000,
+      "snr_db": 0.37
+    },
+    {
+      "label": "sat2335",
+      "tune_mhz": 2335,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.56,
+      "rms_median_dbfs": 30.13,
+      "rms_max_dbfs": 33.16,
+      "rms_burst_db": 3.03,
+      "nearest": "Sat2A",
+      "offset_hz": 305000,
+      "snr_db": 0.05
+    },
+    {
+      "label": "sat2342",
+      "tune_mhz": 2342,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 26.26,
+      "rms_max_dbfs": 34.15,
+      "rms_burst_db": 7.89,
+      "nearest": "Sat2B",
+      "offset_hz": 205000,
+      "snr_db": 0.14
+    },
+    {
+      "label": "sat2344",
+      "tune_mhz": 2344,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 30.13,
+      "rms_max_dbfs": 33.9,
+      "rms_burst_db": 3.76,
+      "nearest": "Sat1B",
+      "offset_hz": 45000,
+      "snr_db": 0.27
+    },
+    {
+      "label": "wide2338",
+      "tune_mhz": 2338,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN HARDWARE",
+      "gain_reply": "GAIN HARDWARE -1 0 82 0",
+      "kind": "wide",
+      "captures": 16,
+      "seconds": 2.06,
+      "rms_median_dbfs": 24.42,
+      "rms_max_dbfs": 34.73,
+      "rms_burst_db": 10.31,
+      "carrier_snr_db": {
+        "Sat1A": -0.75,
+        "Sat2A": -0.95,
+        "TerrA": -0.37,
+        "TerrB": -0.39,
+        "Sat2B": -0.14,
+        "Sat1B": 1.35
+      }
+    },
+    {
+      "label": "wifi2437-g82",
+      "tune_mhz": 2437,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN MANUAL 82",
+      "gain_reply": "GAIN MANUAL 82 0 82 1",
+      "kind": "burst",
+      "captures": 16,
+      "seconds": 2.07,
+      "rms_median_dbfs": 42.92,
+      "rms_max_dbfs": 43.41,
+      "rms_burst_db": 0.49
+    },
+    {
+      "label": "ctrl2350-g82",
+      "tune_mhz": 2350,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN MANUAL 82",
+      "gain_reply": "GAIN MANUAL 82 0 82 1",
+      "kind": "noise",
+      "captures": 8,
+      "seconds": 1.05,
+      "rms_median_dbfs": 40.71,
+      "rms_max_dbfs": 41.06,
+      "rms_burst_db": 0.35
+    },
+    {
+      "label": "terr2337-g82",
+      "tune_mhz": 2337,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN MANUAL 82",
+      "gain_reply": "GAIN MANUAL 82 0 82 1",
+      "kind": "carrier",
+      "captures": 12,
+      "seconds": 1.56,
+      "rms_median_dbfs": 39.04,
+      "rms_max_dbfs": 39.21,
+      "rms_burst_db": 0.17,
+      "nearest": "TerrA",
+      "offset_hz": 490000,
+      "snr_db": 0.1
+    },
+    {
+      "label": "wide2338-g82",
+      "tune_mhz": 2338,
+      "bandwidth_mhz": 20,
+      "gain_cmd": "GAIN MANUAL 82",
+      "gain_reply": "GAIN MANUAL 82 0 82 1",
+      "kind": "wide",
+      "captures": 12,
+      "seconds": 1.55,
+      "rms_median_dbfs": 39.89,
+      "rms_max_dbfs": 40.37,
+      "rms_burst_db": 0.48,
+      "carrier_snr_db": {
+        "Sat1A": -0.72,
+        "Sat2A": -1.05,
+        "TerrA": -0.47,
+        "TerrB": -0.56,
+        "Sat2B": -0.13,
+        "Sat1B": 1.46
+      }
+    },
+    {
+      "label": "sat2333-g82",
+      "tune_mhz": 2333,
+      "bandwidth_mhz": 13,
+      "gain_cmd": "GAIN MANUAL 82",
+      "gain_reply": "GAIN MANUAL 82 0 82 1",
+      "kind": "carrier",
+      "captures": 8,
+      "seconds": 1.05,
+      "rms_median_dbfs": 38.31,
+      "rms_max_dbfs": 38.46,
+      "rms_burst_db": 0.16,
+      "nearest": "Sat1A",
+      "offset_hz": 465000,
+      "snr_db": 0.28
+    }
+  ]
+}

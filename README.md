@@ -29,6 +29,7 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - `docs/s3-tuning-investigation.md` — REA-directed static analysis of the S3 RF PLL tuning path (libphy.a): fractional-N/SDM mechanism, call chain, out-of-band assessment
 - `docs/sxm-player-analysis.md` — REA-directed analysis of a Linux SiriusXM player (sxm-player): IP API surface, tune flow, delivery pipeline; architecture only, encryption untouched
 - `docs/sxm-player-ecosystem.md` — comparative survey of five open-source players: HLS/AAC pipelines, SXM in-stream metadata format, TS stream structure (PID 768/1024); formats only, no decryption
+- `docs/bench-report-2026-10-10.md` — what the S3, the RTL-SDR, and the Pluto actually measured on this bench
 - `grok-prompt.md` — handoff prompt for briefing an AI assistant onto this project
 
 ## Status
@@ -37,7 +38,9 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - [x] Pluto SDR clone on the bench (Zynq-7020 + AD9361: 70 MHz–6 GHz, ≤56 MHz BW) — covers 2.33 GHz directly, whole 12.5 MHz XM band in one capture; downconverter now fallback-only (RTL-SDR path)
 - [x] DSP chain scoped (GNU Radio primitives; custom work = frame sync + demux)
 - [x] ESP32-native path explored: feasible with conditions (Pluto captures become its reference)
-- [ ] Phase 0: RF verification — S3 + antenna + LNA, look for carriers at 2333 MHz (kill criterion for the native path)
+- [ ] Phase 0: RF verification — S3 + antenna + LNA, look for carriers at 2333 MHz (kill criterion for the native path). 2026-10-10, COM36, no external antenna and no LNA: tuner and CRC-checked captures work at 2.33 GHz, no carrier shape. Not a kill. See `docs/phase0-session-2026-10-10.md`.
+- [x] S3 tune-range survey (2026-10-10): commands accept 100–6000 MHz. Useful direct-PLL span on this module antenna is about 2.28–2.65 GHz. The firmware's 1842–2209 MHz 5/6 LO mode is a sensitivity hole. See `docs/tune-range-2026-10-10.md`.
+- [x] Conducted Pluto TX1 check (2026-10-10): the S3 received a 2333 MHz tone and a 1.64 Msym/s, 1.8 MHz-wide lab signal over the cable. The S3 spectrum at 2.33 GHz is inverted and about 60 kHz low. See `docs/bench-report-2026-10-10.md`.
 - [ ] Antenna + LNA build
 - [ ] Stage 0 modem prototype (synthesized waveform, $0)
 
