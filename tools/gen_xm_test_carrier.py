@@ -20,6 +20,14 @@ LO at 2333 MHz, sample rate = 1.64e6 * sps.
 import argparse
 import numpy as np
 
+SYNC_WORD = 0x1ACFFC1D
+SYNC_LEN = 32
+COUNTER_LEN = 16
+
+
+def _bits_of(value, nbits):
+    return [(value >> i) & 1 for i in range(nbits - 1, -1, -1)]
+
 
 def rrc_taps(sps, alpha, span_symbols):
     """Root-raised-cosine FIR taps, unity energy."""
@@ -53,14 +61,34 @@ def main():
     ap.add_argument("--span", type=int, default=10, help="RRC span in symbols (default 10)")
     ap.add_argument("--seed", type=int, default=0, help="PRNG seed (default 0)")
     ap.add_argument("--rms", type=float, default=0.18, help="output RMS amplitude (default 0.18)")
+    ap.add_argument("--framed", action="store_true",
+                    help="embed sync word + 16-bit frame counter (for frame-sync testing)")
+    ap.add_argument("--frame-payload", type=int, default=1024,
+                    help="payload bits per frame when --framed (default 1024)")
     args = ap.parse_args()
 
     rng = np.random.default_rng(args.seed)
-    n_sym = int(args.duration * args.sym_rate)
 
-    # Random bits -> Gray-coded QPSK, unit energy
-    bits = rng.integers(0, 2, 2 * n_sym)
-    sym = (1 - 2 * bits[0::2]) + 1j * (1 - 2 * bits[1::2])
+    if args.framed:
+        frame_len = SYNC_LEN + COUNTER_LEN + args.frame_payload
+        n_frames = max(1, int(args.duration * args.sym_rate) // frame_len)
+        n_sym = n_frames * frame_len
+        bits = []
+        for fc in range(n_frames):
+            bits += _bits_of(SYNC_WORD, SYNC_LEN)
+            bits += _bits_of(fc % 65536, COUNTER_LEN)
+            bits += rng.integers(0, 2, args.frame_payload).tolist()
+        bits = np.array(bits[:2 * (n_sym // 2)], dtype=np.uint8)
+        n_sym = len(bits) // 2
+    else:
+        n_sym = int(args.duration * args.sym_rate)
+        bits = rng.integers(0, 2, 2 * n_sym)
+
+    # Bits -> Gray-coded QPSK, unit energy
+    # (cast to int8 first: uint8 underflows on 1-2*1 -> 255, not -1)
+    bi = bits[0::2].astype(np.int8)
+    bq = bits[1::2].astype(np.int8)
+    sym = (1 - 2 * bi) + 1j * (1 - 2 * bq)
     sym = sym / np.sqrt(2)
 
     # Upsample and shape

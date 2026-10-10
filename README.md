@@ -30,6 +30,7 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - `docs/sxm-player-analysis.md` — REA-directed analysis of a Linux SiriusXM player (sxm-player): IP API surface, tune flow, delivery pipeline; architecture only, encryption untouched
 - `docs/sxm-player-ecosystem.md` — comparative survey of five open-source players: HLS/AAC pipelines, SXM in-stream metadata format, TS stream structure (PID 768/1024); formats only, no decryption
 - `docs/tx-test-carrier.md` — sending our own XM test carrier: Pluto TX1, `tools/gen_xm_test_carrier.py` (QPSK 1.64 Msym/s, RRC 0.15), conducted-only rule
+- `docs/decoder.md` — OrcXM decoder v0.1 (software side): `tools/orc_decoder/` frame sync + pipeline, test-carrier framing with sync word
 - `grok-prompt.md` — handoff prompt for briefing an AI assistant onto this project
 
 ## Status
