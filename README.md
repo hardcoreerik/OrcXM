@@ -29,7 +29,7 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 ## Status
 
 - [x] Signal parameters pinned (R&S XM-Radio manual)
-- [x] Pluto SDR clone on the bench — covers 2.33 GHz directly, whole 12.5 MHz XM band in one 20 MHz capture; downconverter now fallback-only (RTL-SDR path)
+- [x] Pluto SDR clone on the bench (Zynq-7020 + AD9361: 70 MHz–6 GHz, ≤56 MHz BW) — covers 2.33 GHz directly, whole 12.5 MHz XM band in one capture; downconverter now fallback-only (RTL-SDR path)
 - [x] DSP chain scoped (GNU Radio primitives; custom work = frame sync + demux)
 - [x] ESP32-native path explored: feasible with conditions (Pluto captures become its reference)
 - [ ] Phase 0: RF verification — S3 + antenna + LNA, look for carriers at 2333 MHz (kill criterion for the native path)
@@ -38,4 +38,4 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 
 ## Hardware
 
-Pluto SDR clone (AD9363-class: 325 MHz–3.8 GHz, ≤20 MHz BW, 12-bit, TX+RX) · RTL-SDR dongles (R820T2, ~1.75 GHz / 2.4 Msps, fallback path) · ESP32-S3 boards (LilyGO T-Display-S3, T-Embed CC1101, M5Stack Cardputer Advanced) · Windows bench (GNU Radio via Radioconda)
+Pluto SDR clone (Zynq-7020 + AD9361: 70 MHz–6 GHz, ≤56 MHz BW, 12-bit, TX+RX) · RTL-SDR dongles (R820T2, ~1.75 GHz / 2.4 Msps, fallback path) · ESP32-S3 boards (LilyGO T-Display-S3, T-Embed CC1101, M5Stack Cardputer Advanced) · Windows bench (GNU Radio via Radioconda)
