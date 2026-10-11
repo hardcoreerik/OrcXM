@@ -78,3 +78,21 @@ The FSP/MFP/PAD bit patterns are stand-ins (unpublished); lengths and
 repetition rates are exact per the patents. `blind_sync.find_xm_fsp()`
 recovers the 64-bit FSP from the stream using the known 6912-bit period
 — verified exact match on synthetic data.
+
+## FEC decoders (v0.5)
+
+`tools/orc_decoder/fec.py` — inverts the transmit FEC:
+
+- `viterbi_decode()`: hard-decision Viterbi for rate-1/3 K=7 (polys 171/133/165)
+- `rs_decode_block()` / `rs_decode_bits()`: Berlekamp-Massey RS(255,223) decoder
+
+## End-to-end decode (v0.5) ✅
+
+Full chain verified on synthetic XM-structured IQ:
+
+    xm_frame.encode() → QPSK demod → find_xm_fsp() →
+    extract sub-frame → viterbi_decode() → rs_decode_bits() →
+    original payload, zero bit errors
+
+This is the complete decode path. Swap the synthetic IQ source for real
+captures and the same code runs.

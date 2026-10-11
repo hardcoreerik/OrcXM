@@ -88,7 +88,8 @@ def _rs_gen_poly():
     """Generator polynomial for RS(255,223): 32 parity symbols."""
     g = [1]
     for i in range(_RS_N - _RS_K):
-        g = _gf_poly_mul(g, [1, _gf_exp[i]])
+        # (x + a^i) = [a^i, 1] in [const, x^1] form
+        g = _gf_poly_mul(g, [_gf_exp[i], 1])
     return g
 
 
@@ -104,16 +105,21 @@ _RS_GEN = _rs_gen_poly()
 
 
 def rs_encode_block(data223):
-    """Encode 223 data bytes -> 255 code bytes (systematic)."""
+    """Encode 223 data bytes -> 255 code bytes (systematic, parity first).
+
+    Returns [parity(32) | data(223)] so the codeword polynomial
+    c(x) = p(x) + d(x)*x^32 is divisible by g(x).
+    """
     assert len(data223) == _RS_K
-    parity = [0] * (_RS_N - _RS_K)
-    for byte in data223:
-        fb = byte ^ parity[0]
-        parity = parity[1:] + [0]
-        if fb:
-            for i in range(_RS_N - _RS_K):
-                parity[i] ^= _gf_mul(_RS_GEN[_RS_N - _RS_K - 1 - i], fb)
-    return bytes(data223) + bytes(parity)
+    gen = _RS_GEN  # [g0..g32]
+    msg = [0] * (_RS_N - _RS_K) + list(data223)
+    for i in range(_RS_N - 1, _RS_N - _RS_K - 1, -1):
+        coef = msg[i]
+        if coef:
+            for j in range(_RS_N - _RS_K + 1):
+                msg[i - (_RS_N - _RS_K) + j] ^= _gf_mul(gen[j], coef)
+    parity = msg[:_RS_N - _RS_K]
+    return bytes(parity) + bytes(data223)
 
 
 def rs_encode_bits(bits):
@@ -209,11 +215,11 @@ class XMFrameEncoder:
         coded_subframes = []
 
         # Size the info payload so RS+conv fits in 6848 bits.
-        # Conv 1/3 K=7: out = 3*(in+6). RS(255,223): out = in*255/223.
-        # Target: conv_out = 6848 -> conv_in = 2276 -> rs_out = 2276 bits = 284.5 bytes.
-        # Use 284 bytes RS input -> 284*8=2272 bits -> pad to 2276 for conv.
-        rs_in_bytes = 284
-        info_bits = rs_in_bytes * 8  # 2272
+        # Use 1 RS(255,223) codeword: 223 data bytes -> 255 bytes = 2040 bits.
+        # Pad RS output to 2276 bits for conv input.
+        # Conv 1/3 K=7: 2276 in -> 3*(2276+6) = 6846 bits, pad 2 -> 6848.
+        rs_in_bytes = 223
+        info_bits = rs_in_bytes * 8  # 1784
 
         for sf in range(SUBFRAMES_PER_MASTER):
             # Random payload for this sub-frame
@@ -221,8 +227,8 @@ class XMFrameEncoder:
             subframe_payloads.append(payload)
 
             # FEC: RS(255,223) then convolutional rate 1/3
-            rs_coded = rs_encode_bits(payload)  # 284 -> ~325 bytes
-            # Pad/truncate RS output to 2276 bits for conv input
+            rs_coded = rs_encode_bits(payload)  # 1784 bits -> 2040 bits
+            # Pad RS output to 2276 bits for conv input
             if len(rs_coded) < 2276:
                 rs_coded = np.concatenate(
                     [rs_coded, np.zeros(2276 - len(rs_coded), dtype=np.uint8)])
