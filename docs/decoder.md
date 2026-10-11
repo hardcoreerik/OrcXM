@@ -49,3 +49,16 @@ Verified on synthetic data: unknown 48-bit sync word in 2048-bit frames,
 40 frames — recovered the period and the exact sync word with zero errors.
 This is the tool we'll run on real XM captures to find the actual frame
 structure.
+
+## Transmit chain simulator (v0.3)
+
+`tools/orc_decoder/xm_encoder.py` — full software transmit chain so the
+decoder can be developed without waiting on hardware captures:
+
+    payload → framing → convolutional FEC → block interleave →
+    QPSK → RRC → channel (freq offset, phase noise, AWGN) → IQ
+
+Returns IQ plus ground truth (original payload bits per frame) for
+scoring the decoder. The FEC is a stand-in (XM's actual code is unknown)
+— the point is testing the decoder against coded, interleaved, noisy
+data with known answers.
