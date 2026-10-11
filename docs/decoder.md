@@ -34,3 +34,18 @@ Generate → decode → verify, all green:
 - Real demodulator (RRC, timing, Costas) → `set_demodulator`
 - TDM structure research → `demux.py`
 - Soft-bit support in `frame_sync.py` when LLRs are available
+
+## Blind sync search (v0.2)
+
+`tools/orc_decoder/blind_sync.py` — for when we don't know the sync word.
+
+Real XM's frame structure is unpublished. Given a demodulated bitstream
+with no prior knowledge, blind search:
+1. Finds candidate frame periods via autocorrelation
+2. Recovers the sync pattern by entropy analysis (sync positions have
+   ~zero entropy, data positions ~1 bit)
+
+Verified on synthetic data: unknown 48-bit sync word in 2048-bit frames,
+40 frames — recovered the period and the exact sync word with zero errors.
+This is the tool we'll run on real XM captures to find the actual frame
+structure.
