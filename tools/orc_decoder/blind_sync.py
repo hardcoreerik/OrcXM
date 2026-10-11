@@ -95,3 +95,16 @@ def blind_search(bits, min_period=64, max_period=8192, top_n=3):
         if runs:
             result[period] = {"score": score, "syncs": runs}
     return result
+
+
+def find_xm_fsp(bits, period=6912, entropy_thresh=0.2):
+    """Find the XM fast sync preamble at the patent-known period.
+
+    The patents (US20080311845) specify 6912-bit sub-frames with a 64-bit
+    FSP. This recovers the FSP pattern and offset without needing the
+    actual bit values in advance.
+
+    Returns list of (offset, sync_bits).
+    """
+    return recover_sync(bits, period, entropy_thresh=entropy_thresh,
+                        min_run=32)

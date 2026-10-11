@@ -62,3 +62,19 @@ Returns IQ plus ground truth (original payload bits per frame) for
 scoring the decoder. The FEC is a stand-in (XM's actual code is unknown)
 — the point is testing the decoder against coded, interleaved, noisy
 data with known answers.
+
+## Patent-accurate XM frame simulator (v0.4)
+
+`tools/orc_decoder/xm_frame.py` — implements the frame structure from
+XM's own patents (US20080311845, US7653088):
+
+- Master frame: 128-bit MFP + 205 × 6912-bit sub-frames + 192-bit PAD
+  = 1,417,280 bits per 432 ms
+- Sub-frame: 64-bit FSP + 6848 coded bits
+- FEC: RS(255,223) outer + rate-1/3 K=7 convolutional inner
+- QPSK at 1.64 Msps, RRC 0.15
+
+The FSP/MFP/PAD bit patterns are stand-ins (unpublished); lengths and
+repetition rates are exact per the patents. `blind_sync.find_xm_fsp()`
+recovers the 64-bit FSP from the stream using the known 6912-bit period
+— verified exact match on synthetic data.
