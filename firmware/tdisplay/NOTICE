@@ -1,0 +1,9 @@
+OrcXM T-Display handheld firmware
+SPDX-License-Identifier: GPL-3.0-or-later
+
+This program is linked with ESPARGOS/esp-sdr (GPL-3.0). The combined
+firmware is GPL-3.0-or-later. font8x8_basic.h is public domain
+(Daniel Hepper, IBM VGA).
+
+The capture path is spectrum presence only. It does not demodulate
+and it does not touch the SiriusXM cipher.

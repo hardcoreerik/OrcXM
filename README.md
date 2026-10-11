@@ -25,6 +25,7 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 - `docs/esp32-native-exploration.md` — ESP32-S3 native capture feasibility: no downconverter, no dongle, no FPGA
 - `docs/pluto-path.md` — Pluto SDR as lab reference receiver: direct 2.33 GHz tuning, whole-band capture, revised bring-up plan (added 2026-10-09)
 - `docs/phase0-test-plan.md` — Phase 0 bench procedure: S3 out-of-spec tuning test with go/no-go criteria
+- `docs/tdisplay-scan-2026-10-10.md` — T-Display live dwells on a 2.4 GHz SMA whip: three SD reports, all six centers quiet, Phase 0 still open
 - `docs/phase0-setup-espsdr-method.md` — Phase 0 setup following the ESP-SDR team's documented method (flash, interrogate, tune, capture)
 - `docs/s3-tuning-investigation.md` — REA-directed static analysis of the S3 RF PLL tuning path (libphy.a): fractional-N/SDM mechanism, call chain, out-of-band assessment
 - `docs/sxm-player-analysis.md` — REA-directed analysis of a Linux SiriusXM player (sxm-player): IP API surface, tune flow, delivery pipeline; architecture only, encryption untouched
