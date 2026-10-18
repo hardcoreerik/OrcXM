@@ -17,10 +17,18 @@ shows "2.4 GHz SMA". No powered LNA was in the chain.
 Each pass is a live dwell, not an IQ recording. The chip cannot store a
 minute of samples. `s0001.txt` is the short bench pass (no `xm_dwell_s`
 line). `s0002.txt` and `s0003.txt` dwell 10 seconds on each of the six
-integer XM centers and 1.5 seconds on each Wi-Fi check. A line is RISE
-only when the corrected window is at least 3 dB above the floor and
-1.2–2.6 MHz wide. Wi-Fi "heard" means the loudest snapshot is at least
-6 dB above that tune's median.
+XM carriers and 1.5 seconds on each Wi-Fi check. A line is RISE only
+when the corrected window is at least the gate above the floor and
+1.2–2.6 MHz wide; the gate is 3 dB, raised to the floor's own
+side-to-side tilt when that is larger. Wi-Fi "heard" means the loudest
+snapshot is at least 6 dB above that tune's median.
+
+These five files predate the off-centre dial plan: they were taken with
+one carrier per nearest integer dial, which put TerrB, Sat2B and Sat1B
+inside the ±150 kHz spur exclusion. From the next save the image dials
+2–3.5 MHz off each carrier and appends `gate`, `tilt`, `spur` and `mask`
+to every carrier line; a `mask 1` means the dial is wrong for that
+carrier. See `docs/presence-metric-2026-10-17.md`.
 
 ## Results
 
@@ -82,16 +90,20 @@ changes screen. A long press starts the screen in view. The data screen
 keeps the last saved scan, and a long press there runs the one-minute
 save. The waterfall runs one dial live, newest row at the top, low
 frequency on the left, with the center spur drawn gray. Leaving the
-waterfall and coming back advances the dial through 2337, 2340, 2333,
-2335, 2342, 2344, and 2437 MHz. This image no longer speaks the ESP-SDR
-text protocol. `bench/outdoor_capture.py` drives a board that is still
-running ESP-SDR. COM36 was left on that firmware.
+waterfall and coming back advances the dial through 2331, 2332, 2334,
+2343, 2345, 2342, and 2437 MHz. Each carrier is tuned 2–3.5 MHz off its
+own dial so it never lands in the ±150 kHz spur exclusion; see
+`docs/presence-metric-2026-10-17.md`. This image no longer speaks the
+ESP-SDR text protocol. `bench/outdoor_capture.py` drives a board that is
+still running ESP-SDR. COM36 was left on that firmware.
 
 ## Cable check on the waterfall
 
 With the waterfall held on 2337 MHz, Pluto TX1 replayed the lab carrier
 at 2333 MHz over a cable. Hardware gain was −40 dB. The Pluto was
-`ip:192.168.1.228`. A one-shot buffer dropped back to mute by itself.
+`ip:192.168.1.228` this session — its USB-Ethernet address is not fixed,
+so confirm it with `iio_info -s`. A one-shot buffer dropped back to mute
+by itself.
 Feeding samples continuously held the carrier for five minutes at
 −40 dB, then the transmitter was muted to −89.75 dB and the sample rate
 restored to 30.72 Msps.

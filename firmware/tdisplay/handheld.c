@@ -52,6 +52,14 @@ static const char *TAG = "orcxm";
 #define FRAMES 12
 #define GAIN 70
 #define BANDWIDTH_MHZ 20
+/* Scoring geometry, see bench/xm_metrics.py. */
+#define METRICS_VERSION 2
+#define REF_LOW_HZ 60000.0f
+#define SPUR_HZ 150000.0f
+#define WINDOW_HZ 950000.0f
+#define FLOOR_IN_HZ 4000000.0f
+#define FLOOR_OUT_HZ 7500000.0f
+#define RISE_DB 3.0f
 /* Six XM centers share one minute. Wi-Fi is only a short sanity check. */
 #define XM_DWELL_MS 10000
 #define WIFI_DWELL_MS 1500
@@ -408,6 +416,10 @@ typedef struct {
     float rms_p95;
     float excess_db;
     float width_mhz;
+    float threshold_db; /* raised to the floor's side-to-side tilt */
+    float tilt_db;
+    float spur_db;
+    int spur_masks; /* carrier sits inside the +/-150 kHz spur exclusion */
     int kind; /* 0 quiet, 1 rise, 2 narrow, 3 broad, 4 fail */
     int16_t bins[64];
 } tune_out_t;
@@ -506,7 +518,7 @@ static void spectrum(const int8_t *iq, float *power, float *rms, float *clip) {
 
 static float corrected_hz(int dial, int bin) {
     float baseband = ((float)bin - (NFFT / 2.0f)) * (FS_HZ / NFFT);
-    return (float)dial * 1e6f - baseband + 60000.0f;
+    return (float)dial * 1e6f - baseband + REF_LOW_HZ;
 }
 
 static void smooth_db(const float *power, float *db) {
@@ -527,14 +539,26 @@ static void score_carrier(tune_out_t *out, const float *db) {
     static float floor_vals[NFFT];
     static float window_vals[NFFT];
     static int hot[NFFT];
-    int n_floor = 0, n_window = 0;
+    int n_floor = 0, n_lower = 0, n_upper = 0, n_window = 0;
     float center = out->center_mhz * 1e6f;
+    /* Where the carrier lands on the raw baseband axis. */
+    float carrier_bb = -(out->center_mhz - (float)out->dial) * 1e6f + REF_LOW_HZ;
+
+    out->threshold_db = RISE_DB;
+    out->tilt_db = NAN;
+    out->spur_db = NAN;
+    out->spur_masks = fabsf(carrier_bb) < SPUR_HZ ? 1 : 0;
+
     for (int i = 0; i < NFFT; i++) {
         float baseband = ((float)i - (NFFT / 2.0f)) * (FS_HZ / NFFT);
         float abs_b = fabsf(baseband);
         float f = corrected_hz(out->dial, i);
-        if (abs_b >= 4.0e6f && abs_b <= 7.5e6f) floor_vals[n_floor++] = db[i];
-        if (fabsf(f - center) <= 0.95e6f && abs_b >= 150000.0f) window_vals[n_window++] = db[i];
+        if (abs_b >= FLOOR_IN_HZ && abs_b <= FLOOR_OUT_HZ) {
+            floor_vals[n_floor++] = db[i];
+            if (baseband < 0.0f) n_lower++;
+            else n_upper++;
+        }
+        if (fabsf(f - center) <= WINDOW_HZ && abs_b >= SPUR_HZ) window_vals[n_window++] = db[i];
     }
     if (n_floor < 8 || n_window < 8) {
         out->kind = 4;
@@ -542,6 +566,35 @@ static void score_carrier(tune_out_t *out, const float *db) {
     }
     float floor_db = median_sorted(floor_vals, n_floor);
     out->excess_db = median_sorted(window_vals, n_window) - floor_db;
+
+    /* How far the two halves of the floor disagree. A rise below that is
+     * not evidence of a carrier, so it also raises the gate. */
+    if (n_lower >= 8 && n_upper >= 8) {
+        int n = 0;
+        for (int i = 0; i < NFFT; i++) {
+            float baseband = ((float)i - (NFFT / 2.0f)) * (FS_HZ / NFFT);
+            float abs_b = fabsf(baseband);
+            if (abs_b >= FLOOR_IN_HZ && abs_b <= FLOOR_OUT_HZ && baseband < 0.0f)
+                floor_vals[n++] = db[i];
+        }
+        float lo = median_sorted(floor_vals, n);
+        n = 0;
+        for (int i = 0; i < NFFT; i++) {
+            float baseband = ((float)i - (NFFT / 2.0f)) * (FS_HZ / NFFT);
+            float abs_b = fabsf(baseband);
+            if (abs_b >= FLOOR_IN_HZ && abs_b <= FLOOR_OUT_HZ && baseband > 0.0f)
+                floor_vals[n++] = db[i];
+        }
+        out->tilt_db = fabsf(median_sorted(floor_vals, n) - lo);
+        if (out->tilt_db > out->threshold_db) out->threshold_db = out->tilt_db;
+    }
+
+    float spur_peak = -INFINITY;
+    for (int i = 0; i < NFFT; i++) {
+        float baseband = ((float)i - (NFFT / 2.0f)) * (FS_HZ / NFFT);
+        if (fabsf(baseband) < SPUR_HZ && db[i] > spur_peak) spur_peak = db[i];
+    }
+    if (spur_peak > -INFINITY) out->spur_db = spur_peak - floor_db;
 
     int n_hot = 0;
     int center_bin = 0;
@@ -554,7 +607,7 @@ static void score_carrier(tune_out_t *out, const float *db) {
             center_bin = i;
         }
         float baseband = ((float)i - (NFFT / 2.0f)) * (FS_HZ / NFFT);
-        if (err <= 2.5e6f && fabsf(baseband) >= 150000.0f && db[i] >= floor_db + 3.0f) hot[n_hot++] = i;
+        if (err <= 2.5e6f && fabsf(baseband) >= SPUR_HZ && db[i] >= floor_db + RISE_DB) hot[n_hot++] = i;
     }
     out->width_mhz = 0;
     if (n_hot > 0) {
@@ -574,7 +627,7 @@ static void score_carrier(tune_out_t *out, const float *db) {
             if (k < n_hot) prev = bin;
         }
     }
-    if (out->excess_db < 3.0f || out->width_mhz <= 0.0f) out->kind = 0;
+    if (out->excess_db < out->threshold_db || out->width_mhz <= 0.0f) out->kind = 0;
     else if (out->width_mhz >= 1.2f && out->width_mhz <= 2.6f) out->kind = 1;
     else if (out->width_mhz < 1.2f) out->kind = 2;
     else out->kind = 3;
@@ -757,14 +810,18 @@ static void save_report(const tune_out_t *tunes, int n, float burst_db) {
         s_sd = false;
         return;
     }
-    fprintf(f, "orcxm handheld\ngain %d\nbandwidth %d\nframes %d\nfft %d\nxm_dwell_s %d\n", GAIN,
-            BANDWIDTH_MHZ, FRAMES, NFFT, XM_DWELL_MS / 1000);
+    fprintf(f, "orcxm handheld\nmetrics %d\ngain %d\nbandwidth %d\nframes %d\nfft %d\nxm_dwell_s %d\n",
+            METRICS_VERSION, GAIN, BANDWIDTH_MHZ, FRAMES, NFFT, XM_DWELL_MS / 1000);
     fprintf(f, "wifi_burst_db %.1f\n", burst_db);
     for (int i = 0; i < n; i++) {
         const tune_out_t *t = &tunes[i];
-        fprintf(f, "tune %d role %s rms_med %.2f rms_p95 %.2f excess %.2f width %.2f %s\n", t->dial,
-                t->role ? "carrier" : "wifi", t->rms_med, t->rms_p95, t->excess_db, t->width_mhz,
-                kind_word(t->kind));
+        fprintf(f, "tune %d role %s rms_med %.2f rms_p95 %.2f excess %.2f width %.2f %s",
+                t->dial, t->role ? "carrier" : "wifi", t->rms_med, t->rms_p95, t->excess_db,
+                t->width_mhz, kind_word(t->kind));
+        if (t->role)
+            fprintf(f, " gate %.2f tilt %.2f spur %.2f mask %d", t->threshold_db, t->tilt_db,
+                    t->spur_db, t->spur_masks);
+        fprintf(f, "\n");
         fprintf(f, "bins");
         for (int b = 0; b < 64; b++) fprintf(f, " %d", t->bins[b]);
         fprintf(f, "\n");
@@ -781,8 +838,11 @@ static void run_scan(void) {
         float center;
         int role;
     } plan[] = {
-        {2437, 0, 0}, {2412, 0, 0}, {2333, 2333.465f, 1}, {2335, 2335.305f, 1},
-        {2337, 2337.490f, 1}, {2340, 2340.020f, 1}, {2342, 2342.205f, 1}, {2344, 2344.045f, 1},
+        /* Each carrier is tuned 2-3.5 MHz off its dial: the spur sits on
+         * the dial at +4 to +7 dB and the window drops +/-150 kHz of it,
+         * so a carrier on its own dial loses its middle bins. */
+        {2437, 0, 0}, {2412, 0, 0}, {2331, 2333.465f, 1}, {2332, 2335.305f, 1},
+        {2334, 2337.490f, 1}, {2343, 2340.020f, 1}, {2345, 2342.205f, 1}, {2342, 2344.045f, 1},
     };
     const int n = (int)(sizeof(plan) / sizeof(plan[0]));
     tune_out_t tunes[8];
@@ -837,7 +897,7 @@ static void show_idle(void) {
     else screen(lines, colors);
 }
 
-static const int k_fall_dial[] = {2337, 2340, 2333, 2335, 2342, 2344, 2437};
+static const int k_fall_dial[] = {2331, 2332, 2334, 2343, 2345, 2342, 2437};
 static int s_fall_i;
 static int s_screen;
 

@@ -12,7 +12,7 @@ The detailed notes are `docs/phase0-session-2026-10-10.md` and
 |---|---|---|
 | ESP32-S3, ESP-SDR `e74f2a4`, profile `esp32s3` | COM36, CH343 UART, MAC `ac:a7:04:2c:5f:04` | Integer MHz, 100–6000. Useful sensitivity on this module antenna is about 2.28–2.65 GHz |
 | RTL-SDR Blog V4, R828D, serial 00000001 | This PC | About 24 MHz–1.766 GHz. Cannot tune to 2.33 GHz |
-| Pluto clone, FISH Ball Rev.A, Zynq-7020 + AD9361 | USB Ethernet `ip:192.168.2.1` | About 47 MHz–6 GHz. TX1 is the cabled port |
+| Pluto clone, FISH Ball Rev.A, Zynq-7020 + AD9361 | USB Ethernet, address varies per session (`192.168.2.1` here, `192.168.1.228` later); confirm with `iio_info -s` | About 47 MHz–6 GHz. TX1 is the cabled port |
 
 The S3 was flashed from the ESPARGOS ESP-SDR manifest after the part
 hashes matched. The factory image on that module was an "RGB Demo" build

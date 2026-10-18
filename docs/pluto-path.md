@@ -7,7 +7,8 @@ downconverter and the RTL-SDR as the lab receiver.
 
 ## Why the Pluto changes everything
 
-- **Direct tuning**: 325 MHz–3.8 GHz covers 2332.5–2345 MHz natively. No
+- **Direct tuning**: the AD9361's 70 MHz–6 GHz range covers 2332.5–2345 MHz
+  natively (the bench saw usable coverage from about 47 MHz to 6 GHz). No
   downconverter, no IF planning, no image-reject filter math.
 - **Whole band at once**: up to 56 MHz bandwidth — the entire 12.5 MHz XM
   band fits with room to spare (run 30.72 MSPS for comfortable oversampling,

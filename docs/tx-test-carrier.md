@@ -10,8 +10,11 @@ receiver. Do NOT radiate at 2.33 GHz — it's licensed S-band.
 ## The transmitter: Pluto TX1
 
 The clone's AD9361 transmits as well as receives (70 MHz–6 GHz).
-Grok's bench already proved the path: CW tone at 2333 MHz seen by the
-S3 at +28 dB, and lab QPSK resolved at the right width.
+The bench already proved the path, but read the numbers carefully: a CW
+tone at 2333.000 MHz showed on the S3 as a one-bin line at +28 dB, and
+lab QPSK resolved at 1.80 MHz half-power width — both only after an
+80-frame average, and only on the mirrored axis. Neither appears in a
+single snapshot on the uncorrected side.
 
 ## Generate the baseband
 

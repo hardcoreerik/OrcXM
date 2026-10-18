@@ -4,12 +4,16 @@ Phase 0 presence check only. It does not demodulate, and it does not
 touch the SiriusXM cipher.
 
 This firmware (protocol 6, the 2026-10-08 esp32s3 build) accepts whole
-megahertz only, so the published centers are tuned as 2333, 2335, 2337,
-2340, 2342, and 2344. BANDWIDTH below 13 is rejected; the capture uses
-20. Gain is manual. Around 2.33 GHz the spectrum is inverted about the
-dial and the reference reads about 60 kHz low, so bins are mirrored
-before the hump is measured. The line on the tune center is the
-receiver's own spur and is left out of the score.
+megahertz only. BANDWIDTH below 13 is rejected; the capture uses 20.
+Gain is manual. Around 2.33 GHz the spectrum is inverted about the dial
+and the reference reads about 60 kHz low, so bins are mirrored before
+the hump is measured. The line on the tune center is the receiver's own
+spur and is left out of the score.
+
+Each carrier is tuned 2-3.5 MHz off its dial, not on it. The spur is
++4 to +7 dB over the floor and the window discards +/-150 kHz of it, so
+a carrier tuned to its own dial loses its middle bins; three of the six
+did under the old dials. `xm_metrics.dial_plan()` picks the dials.
 
 Default port is COM3, the T-Display-S3. The OrcXM handheld image does
 not speak this protocol. Pass --port for a board that is still running
@@ -38,17 +42,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 import serial
 
+import xm_metrics
+
 FS = 16_000_000
 RATE = 6
-REF_LOW_HZ = 60_000.0
-SPUR_HZ = 150_000.0
-SMOOTH_HZ = 150_000.0
-CARRIER_HALF_HZ = 950_000.0
-FLOOR_INNER_HZ = 4_000_000.0
-FLOOR_OUTER_HZ = 7_500_000.0
+SPUR_HZ = xm_metrics.SPUR_HZ
+SMOOTH_HZ = xm_metrics.SMOOTH_HZ
 
 # Integer dial, role, and the published center in MHz when there is one.
+# The six carriers come from the shared plan so code and report agree.
+_ROLE = {"Sat1A": "sat", "Sat2A": "sat", "Sat2B": "sat", "Sat1B": "sat",
+         "TerrA": "terr", "TerrB": "terr"}
 TUNES = (
+    (2437, "wifi", None, "Wi-Fi channel 6"),
+    (2412, "wifi", None, "Wi-Fi channel 1"),
+) + tuple(
+    (p["dial_mhz"], _ROLE[p["carrier"]], p["center_mhz"],
+     f"{p['carrier']} {p['center_mhz']:.3f}, {p['offset_mhz']:.2f} MHz off dial")
+    for p in xm_metrics.dial_plan()
+) + (
+    (2323, "away", None, "tune-away 10 MHz below"),
+    (2354, "away", None, "tune-away 10 MHz above"),
+)
+
+# The 2026-10-10 geometry: nearest integer dial, carrier on or beside the spur.
+LEGACY_TUNES = (
     (2437, "wifi", None, "Wi-Fi channel 6"),
     (2412, "wifi", None, "Wi-Fi channel 1"),
     (2333, "sat", 2333.465, "satellite 2333.465"),
@@ -161,59 +179,8 @@ def smooth(power: np.ndarray, hz: float) -> np.ndarray:
     return np.convolve(power, kernel, mode="same")
 
 
-def corrected_hz(dial_mhz: int, baseband_hz: np.ndarray) -> np.ndarray:
-    """True RF after the 2.33 GHz mirror and the 60 kHz-low reference."""
-    return dial_mhz * 1e6 - baseband_hz + REF_LOW_HZ
-
-
-def score_carrier(
-    dial_mhz: int,
-    center_mhz: float,
-    baseband: np.ndarray,
-    median_power: np.ndarray,
-) -> dict:
-    smoothed = smooth(median_power, SMOOTH_HZ)
-    db = 10.0 * np.log10(smoothed + 1e-20)
-    true_hz = corrected_hz(dial_mhz, baseband)
-    spur = np.abs(baseband) < SPUR_HZ
-    floor = (np.abs(baseband) >= FLOOR_INNER_HZ) & (np.abs(baseband) <= FLOOR_OUTER_HZ)
-    window = np.abs(true_hz - center_mhz * 1e6) <= CARRIER_HALF_HZ
-    if not np.any(floor) or not np.any(window & ~spur):
-        return {"excess_db": float("nan"), "width_mhz": 0.0, "verdict": "unscored"}
-    floor_db = float(np.median(db[floor]))
-    excess = float(np.median(db[window & ~spur]) - floor_db)
-    search = np.abs(true_hz - center_mhz * 1e6) <= 2_500_000.0
-    # Leave the spur out. A 0.4 MHz join below still bridges the hole in
-    # the middle of one real hump, and does not invent a hump by itself.
-    hot = search & ~spur & (db >= floor_db + 3.0)
-    idx = np.flatnonzero(hot)
-    width_mhz = 0.0
-    if idx.size:
-        breaks = np.where(np.diff(idx) > max(1, int(0.4e6 / (FS / baseband.size))))[0]
-        starts = np.r_[idx[0], idx[breaks + 1]]
-        ends = np.r_[idx[breaks], idx[-1]]
-        center_bin = int(np.argmin(np.abs(true_hz - center_mhz * 1e6)))
-        for start, end in zip(starts, ends):
-            if start <= center_bin <= end or (
-                true_hz[start] <= center_mhz * 1e6 <= true_hz[end]
-                or true_hz[end] <= center_mhz * 1e6 <= true_hz[start]
-            ):
-                width_mhz = abs(float(true_hz[end] - true_hz[start])) / 1e6
-                break
-    if excess < 3.0 or width_mhz <= 0.0:
-        verdict = "no carrier-shaped rise"
-    elif 1.2 <= width_mhz <= 2.6:
-        verdict = "carrier-shaped rise"
-    elif width_mhz < 1.2:
-        verdict = "narrow rise"
-    else:
-        verdict = "broad rise"
-    return {
-        "excess_db": excess,
-        "width_mhz": width_mhz,
-        "floor_db": floor_db,
-        "verdict": verdict,
-    }
+corrected_hz = xm_metrics.corrected_hz
+score_carrier = xm_metrics.score_carrier
 
 
 def measure(radio: Radio, dial: int, samples: int, frames: int) -> dict:
@@ -254,7 +221,7 @@ def plot(path: Path, rows: list[dict]) -> None:
         db = 10.0 * np.log10(smooth(row["median_power"], SMOOTH_HZ) + 1e-20)
         step = max(1, db.size // 400)
         ax.plot(true_mhz[::step], db[::step], color="#1f4e79", lw=0.8)
-        ax.axvline(row["dial_mhz"] + REF_LOW_HZ / 1e6, color="#999999", lw=0.6)
+        ax.axvline(row["dial_mhz"] + xm_metrics.REF_LOW_HZ / 1e6, color="#999999", lw=0.6)
         title = f"{row['dial_mhz']}  {row['label']}"
         if row["role"] == "wifi":
             burst_db = 20.0 * np.log10(row["rms_p95"] / max(row["rms_med"], 1e-3))
@@ -284,6 +251,11 @@ def main() -> None:
     parser.add_argument("--frames", type=int, default=40)
     parser.add_argument("--samples", type=int, default=8192)
     parser.add_argument("--tag", default="outdoor")
+    parser.add_argument(
+        "--legacy-dials",
+        action="store_true",
+        help="nearest integer dial per carrier (2026-10-10 geometry, carrier on the spur)",
+    )
     args = parser.parse_args()
     if not 0 <= args.gain <= 82:
         raise SystemExit("gain must be 0..82")
@@ -314,7 +286,10 @@ def main() -> None:
             flush=True,
         )
         t0 = time.time()
-        for dial, role, center, label in TUNES:
+        tunes = LEGACY_TUNES if args.legacy_dials else TUNES
+        if args.legacy_dials:
+            print("legacy dials: carrier on or beside the spur", flush=True)
+        for dial, role, center, label in tunes:
             t1 = time.time()
             row = measure(radio, dial, args.samples, args.frames)
             row["role"] = role
@@ -322,12 +297,20 @@ def main() -> None:
             row["center_mhz"] = center
             if center is not None:
                 row.update(score_carrier(dial, center, row["baseband"], row["median_power"]))
+                tilt = "  -  " if np.isnan(row["tilt_db"]) else f"{row['tilt_db']:5.1f}"
                 print(
                     f"{dial:4d}  rms {row['rms_med']:6.2f}  p95 {row['rms_p95']:6.2f}"
-                    f"  {row['excess_db']:+5.1f} dB  width {row['width_mhz']:.2f} MHz"
+                    f"  {row['excess_db']:+6.2f} dB  gate {row['threshold_db']:4.1f}"
+                    f"  tilt {tilt}  width {row['width_mhz']:.2f} MHz"
                     f"  {row['verdict']}  ({time.time() - t1:.0f}s)",
                     flush=True,
                 )
+                if row["spur_masks_carrier"]:
+                    print(
+                        f"      WARNING: carrier is inside the +/-150 kHz spur exclusion; "
+                        f"tune this carrier {row['dial_mhz']:d} MHz off its dial instead",
+                        flush=True,
+                    )
             else:
                 row["excess_db"] = float("nan")
                 row["width_mhz"] = 0.0
@@ -355,6 +338,13 @@ def main() -> None:
                 ),
                 excess_db=np.array([r["excess_db"] for r in rows], dtype=np.float32),
                 width_mhz=np.array([r["width_mhz"] for r in rows], dtype=np.float32),
+                threshold_db=np.array([r.get("threshold_db", np.nan) for r in rows], dtype=np.float32),
+                tilt_db=np.array([r.get("tilt_db", np.nan) for r in rows], dtype=np.float32),
+                spur_db=np.array([r.get("spur_db", np.nan) for r in rows], dtype=np.float32),
+                spur_masks_carrier=np.array(
+                    [bool(r.get("spur_masks_carrier", False)) for r in rows]
+                ),
+                metrics_version=np.int32(xm_metrics.METRICS_VERSION),
                 rms_med=np.array([r["rms_med"] for r in rows], dtype=np.float32),
                 rms_p95=np.array([r["rms_p95"] for r in rows], dtype=np.float32),
                 clip=np.array([r["clip"] for r in rows], dtype=np.float32),
