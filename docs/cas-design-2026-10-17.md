@@ -148,6 +148,17 @@ structurally cannot.
 - **Hardware root of trust as a cost, not a fix.** A secure element or TEE
   raises the attacker's cost. It does not close the hole. Treat it as one layer.
 
+### One thing that only shows up when you build it
+
+Binding the receiver identity into the authenticated data looks redundant at
+first: if every card has its own key, the key alone already prevents one card
+opening another's message. The binding only becomes load-bearing in a
+**group-key deployment**, where one key is shared across a batch of receivers —
+and then it is the *only* thing separating them. Because group keys are common
+in practice (they simplify manufacture), the binding is not optional. Verified
+in `tools/orc_cas/selftest.py`: with a shared key and distinct card ids, the
+receiver refuses another card's message purely because of the binding.
+
 ## 7. Design checklist
 
 Each historical failure, with the countermeasure to adopt up front.
@@ -212,7 +223,32 @@ Worth stating plainly, because it reorders priorities:
   entirely appropriate for a system you design deliberately.
 - **Conditional access** — last, and smallest.
 
-## 10. Sources
+## 10. Reference implementation
+
+The design above is implemented, not just asserted, in `tools/orc_cas/`:
+
+```
+python tools/orc_cas/selftest.py     # the gate: exit 0 means every property holds
+python tools/orc_cas/harness.py      # end-to-end walkthrough on one console
+```
+
+| File | Role |
+|---|---|
+| `keys.py` | card → service → control-word hierarchy, HKDF-SHA256 |
+| `cw.py` | control-word rotation schedule |
+| `messages.py` | ECM/EMM/content sealing, AES-256-GCM, context-bound AAD |
+| `headend.py` | the broadcast side |
+| `receiver.py` | the receiver side, fails closed |
+| `harness.py` | entitled / bystander / revoked walkthrough |
+| `selftest.py` | 22 checks, one per claimed property |
+
+It composes `cryptography`'s AES-GCM and HKDF and implements no crypto itself.
+The selftest checks were mutation-tested: removing the epoch from the ECM
+associated data makes a replay succeed, and removing the card id from the EMM
+associated data lets a group-key receiver accept another card's message. So each
+check fails when its countermeasure is removed, rather than passing vacuously.
+
+## 11. Sources
 
 Standards and primary references for the claims above:
 
