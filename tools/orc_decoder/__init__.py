@@ -1,5 +1,5 @@
-"""OrcXM decoder — software side of the XM receive chain."""
-from . import frame_sync
-from . import pipeline
+"""OrcXM decoder: QPSK demodulation and frame synchronisation."""
 
-__all__ = ["frame_sync", "pipeline"]
+from . import channel, demod, frame_sync, interp, pipeline, rrc
+
+__all__ = ["channel", "demod", "frame_sync", "interp", "pipeline", "rrc"]
