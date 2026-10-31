@@ -47,3 +47,9 @@ The audio payload is encrypted with per-device keys provisioned over the air by 
 ## Hardware
 
 Pluto SDR clone (Zynq-7020 + AD9361: 70 MHz–6 GHz, ≤56 MHz BW, 12-bit, TX+RX) · RTL-SDR dongles (R820T2, ~1.75 GHz / 2.4 Msps, fallback path) · ESP32-S3 boards (LilyGO T-Display-S3, T-Embed CC1101, M5Stack Cardputer Advanced) · Windows bench (GNU Radio via Radioconda)
+
+## Support development
+
+If this project is useful to you, consider supporting its development. Across ORC projects, support helps fund development time, hardware testing, receiver compatibility, and decoder work.
+
+[GitHub Sponsors](https://github.com/sponsors/hardcoreerik) · [Ko-fi](https://ko-fi.com/hardcoreerik) · [PayPal](https://paypal.me/hardcoreerik)
